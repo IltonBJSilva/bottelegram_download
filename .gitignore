@@ -1,0 +1,27 @@
+# Ambientes Virtuais
+venv/
+env/
+.env/
+
+# Configurações e Segredos
+.env
+.env.local
+
+# Bancos de Dados e Dados Locais
+data/
+media/
+logs/
+*.db
+*.sqlite3
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+
+# IDEs
+.vscode/
+.idea/
+*.swp
