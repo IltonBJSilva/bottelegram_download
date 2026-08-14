@@ -36,17 +36,65 @@ def get_media_data(message: Message) -> dict:
         }
     return None
 
+# Cache temporário para sincronizar pastas de um mesmo álbum (media_group)
+# Formato: media_group_id: (folder_name, asyncio.Event)
+media_group_cache = {}
+
 @router.message(F.video | F.document | F.photo)
+@router.channel_post(F.video | F.document | F.photo)
 async def handle_media(message: Message):
+    caption = message.caption or ""
+    sender_id = message.from_user.id if message.from_user else 0
+    group_id = message.media_group_id
+    
+    # Se tem comando na legenda, atualiza DB e salva no cache se for um grupo
+    if caption.startswith("/pasta "):
+        args = caption.split(maxsplit=1)
+        if len(args) >= 2:
+            folder_name = args[1].strip()
+            from app.database.connection import get_db
+            async with get_db() as db:
+                await db.execute(
+                    "INSERT OR REPLACE INTO user_settings (user_id, current_folder) VALUES (?, ?)",
+                    (sender_id, folder_name)
+                )
+                await db.commit()
+                
+            if group_id:
+                if group_id not in media_group_cache:
+                    media_group_cache[group_id] = (folder_name, asyncio.Event())
+                else:
+                    media_group_cache[group_id] = (folder_name, media_group_cache[group_id][1])
+                media_group_cache[group_id][1].set() # Avisa outras mensagens do grupo que a pasta foi definida!
+                
     media_data = get_media_data(message)
     if not media_data:
         return
         
-    # Check deduplication
-    existing = await get_file_by_unique_id(media_data['file_unique_id'])
-    if existing:
-        logger.info(f"Duplicate file ignored: {media_data['file_unique_id']}")
-        return
+    from app.database.queries import get_user_folder
+    
+    # Lógica de pasta com sincronização de Álbum
+    current_folder_for_this_file = None
+    
+    if group_id:
+        if group_id in media_group_cache and media_group_cache[group_id][1].is_set():
+            # A mensagem principal já processou a legenda e definiu a pasta
+            current_folder_for_this_file = media_group_cache[group_id][0]
+        elif not caption.startswith("/pasta "):
+            # Não temos a pasta no cache ainda, e esta não é a mensagem com a legenda.
+            # Vamos aguardar até 1 segundo para ver se a mensagem com legenda chega e atualiza o cache.
+            if group_id not in media_group_cache:
+                media_group_cache[group_id] = (None, asyncio.Event())
+                
+            try:
+                await asyncio.wait_for(media_group_cache[group_id][1].wait(), timeout=1.0)
+                current_folder_for_this_file = media_group_cache[group_id][0]
+            except asyncio.TimeoutError:
+                pass # Nenhuma legenda com /pasta chegou para esse álbum a tempo
+                
+    if not current_folder_for_this_file:
+        # Fallback normal: Pega a última pasta do usuário salva no banco
+        current_folder_for_this_file = await get_user_folder(sender_id)
 
     # Insert into DB
     data_to_insert = {
@@ -57,7 +105,8 @@ async def handle_media(message: Message):
         'original_name': media_data['file_name'],
         'file_size': media_data['file_size'],
         'mime_type': media_data['mime_type'],
-        'sender_id': message.from_user.id
+        'sender_id': sender_id,
+        'destination_folder': current_folder_for_this_file
     }
     
     try:

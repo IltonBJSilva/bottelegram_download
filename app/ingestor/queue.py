@@ -20,7 +20,7 @@ async def recover_queue(queue: asyncio.Queue):
     logger.info("Recovering pending downloads from database...")
     
     count = 0
-    async with await get_db() as db:
+    async with get_db() as db:
         db.row_factory = aiosqlite.Row
         # Files that were received, queued or interrupted during download
         cursor = await db.execute(

@@ -45,8 +45,15 @@ async def init_db():
             )
         """)
         
+        # Migrations
+        try:
+            await db.execute("ALTER TABLE files ADD COLUMN destination_folder TEXT")
+        except aiosqlite.OperationalError:
+            pass # Column already exists
+        
         await db.commit()
     logger.info("Database initialized.")
 
-async def get_db():
-    return await aiosqlite.connect(DB_PATH)
+def get_db():
+    """Returns the async context manager for the DB connection."""
+    return aiosqlite.connect(DB_PATH)

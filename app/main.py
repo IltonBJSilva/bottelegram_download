@@ -38,11 +38,12 @@ async def main():
     dp = Dispatcher()
     
     # Register Middleware
-    dp.update.outer_middleware(AuthMiddleware())
+    dp.message.outer_middleware(AuthMiddleware())
+    dp.channel_post.outer_middleware(AuthMiddleware())
     
     # Register Routers
-    dp.include_router(commands_router)
     dp.include_router(receiver_router)
+    dp.include_router(commands_router)
     
     # Start Workers
     workers = []
