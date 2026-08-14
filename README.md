@@ -12,30 +12,40 @@ O sistema atual (Fase 2 completa) utiliza:
 
 ---
 
-## 🛠️ Como Instalar e Rodar (Windows)
+## 🚀 Como Instalar e Rodar (O Jeito Fácil)
 
-Você precisará de Python 3.12+ instalado na máquina.
+Para não precisar instalar o Python ou configurar terminais nos computadores do evento, nós empacotamos o bot inteiro via **Docker**. Isso também permite baixar vídeos maiores que 20MB!
 
-### 1. Clonar e Instalar as Dependências
+1. Baixe e instale o [Docker Desktop](https://www.docker.com/products/docker-desktop/) na máquina.
+2. Copie a pasta inteira do projeto para o PC.
+3. Copie o arquivo `.env.example` e renomeie para `.env`.
+4. Preencha o `.env` com suas credenciais (Veja o passo "Obtendo API_ID" abaixo).
+5. Dê dois cliques no arquivo `start_docker.bat`.
 
-Abra o **PowerShell** na pasta raiz do projeto e execute o script de instalação para criar o ambiente virtual (`venv`) e baixar as bibliotecas:
+Pronto! O bot vai baixar tudo e salvar na pasta `media/`.
+Para parar o bot, dê dois cliques em `stop_docker.bat`.
+
+---
+
+### 🔑 Obtendo TELEGRAM_API_ID e TELEGRAM_API_HASH
+Para baixar arquivos grandes (via servidor local), o Telegram exige essas duas chaves (elas são gratuitas):
+1. Acesse [my.telegram.org](https://my.telegram.org) e faça login.
+2. Vá em **API development tools**.
+3. Crie um novo aplicativo (pode colocar qualquer nome) e copie o `api_id` e `api_hash`.
+4. Cole esses valores no seu arquivo `.env`!
+
+---
+
+### 💻 Como Instalar (Modo Desenvolvedor)
+
+Se você quiser rodar sem o Docker (limite de 20MB):
+Abra o **PowerShell** na pasta raiz e execute:
 
 ```powershell
 .\setup.ps1
-```
-
-> **Nota:** Se você receber erro de execução de script no PowerShell, rode o comando `Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process` e tente novamente.
-
-### 2. Configurar o `.env`
-
-Copie o arquivo `.env.example` para `.env`:
-```powershell
 cp .env.example .env
-```
-
-Edite o arquivo `.env` e adicione o Token do seu Bot:
-```env
-TELEGRAM_BOT_TOKEN=seu_token_aqui
+# Edite o .env e depois rode:
+.\run.ps1
 ```
 
 ### 3. Rodar a Aplicação

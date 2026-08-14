@@ -30,7 +30,7 @@ async def main():
     session = None
     if settings.TELEGRAM_API_SERVER:
         session = AiohttpSession(
-            api=TelegramAPIServer.from_base(settings.TELEGRAM_API_SERVER)
+            api=TelegramAPIServer.from_base(settings.TELEGRAM_API_SERVER, is_local=True)
         )
         logger.info(f"Using Local API Server: {settings.TELEGRAM_API_SERVER}")
         
